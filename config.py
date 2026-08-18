@@ -17,9 +17,11 @@ if not database_url:
     else:
         database_url = "sqlite:///instance/happy.db"
 
-# Some providers still expose the legacy postgres:// scheme.
+# Normalize PostgreSQL URLs to the installed psycopg v3 driver.
 if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
+    database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
+elif database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
 
 SQLALCHEMY_DATABASE_URI = database_url
 SQLALCHEMY_TRACK_MODIFICATIONS = False
