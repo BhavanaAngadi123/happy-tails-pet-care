@@ -31,6 +31,13 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(main_bp)
 
+    # The Vercel fallback uses a temporary SQLite database. Initialize its
+    # schema on cold start so demo flows such as registration can work.
+    # Production PostgreSQL should use migrations instead of create_all().
+    if app.config["SQLALCHEMY_DATABASE_URI"].startswith("sqlite:"):
+        with app.app_context():
+            db.create_all()
+
     @app.get("/health")
     def health():
         return jsonify(status="ok", service="happy-tails"), 200
