@@ -1,0 +1,39 @@
+html, body {
+  min-height: 100%;
+}
+
+body {
+  background: #f8f9fa;
+  color: #212529;
+}
+
+.navbar-brand {
+  letter-spacing: 0.2px;
+}
+
+.container {
+  max-width: 1180px;
+}
+
+.card {
+  border: 0;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
+}
+
+.btn {
+  border-radius: 9px;
+}
+
+.form-control,
+.form-select {
+  border-radius: 9px;
+}
+
+img {
+  max-width: 100%;
+}
+
+footer {
+  background: #fff !important;
+}
