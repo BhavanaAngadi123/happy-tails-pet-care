@@ -1,5 +1,6 @@
 package com.happytails.social;
 
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
@@ -37,8 +38,9 @@ public class SocialController {
   @PostMapping("/reminders") public ResponseEntity<PetReminder> reminder(@RequestBody PetReminder r){return ResponseEntity.status(201).body(reminders.save(r));}
   @PatchMapping("/reminders/{id}/complete") public ResponseEntity<?> complete(@PathVariable Long id){return reminders.findById(id).map(r->{r.setCompleted(true);return ResponseEntity.ok(reminders.save(r));}).orElse(ResponseEntity.notFound().build());}
 
-  @PostMapping("/play-dates") public ResponseEntity<?> playDate(@RequestBody PlayDate p){if(Objects.equals(p.getHostPetId(),p.getGuestPetId()))return ResponseEntity.badRequest().body(Map.of("error","Choose another pet for the play date.")); return ResponseEntity.status(201).body(playDates.save(p));}
+  @PostMapping("/play-dates") public ResponseEntity<?> playDate(@RequestBody PlayDate p,HttpSession session){Long active=activePet(session);if(active==null)return ResponseEntity.status(401).body(Map.of("error","Please log in first."));if(p.getGuestPetId()==null||!profiles.existsById(p.getGuestPetId()))return ResponseEntity.badRequest().body(Map.of("error","Choose a valid pet."));if(Objects.equals(active,p.getGuestPetId()))return ResponseEntity.badRequest().body(Map.of("error","Choose another pet for the play date."));p.setHostPetId(active);p.setStatus("PENDING");return ResponseEntity.status(201).body(playDates.save(p));}
   @GetMapping("/profiles/{id}/play-dates") public List<PlayDate> playDates(@PathVariable Long id){return playDates.findByHostPetIdOrGuestPetIdOrderByScheduledAtAsc(id,id);}
+  @PatchMapping("/play-dates/{id}/{status}") public ResponseEntity<?> updatePlayDate(@PathVariable Long id,@PathVariable String status,HttpSession session){Long active=activePet(session);if(active==null)return ResponseEntity.status(401).body(Map.of("error","Please log in first."));String next=status.toUpperCase();if(!Set.of("ACCEPTED","DECLINED","CANCELLED").contains(next))return ResponseEntity.badRequest().body(Map.of("error","Invalid play date status."));return playDates.findById(id).<ResponseEntity<?>>map(p->{boolean guest=Objects.equals(active,p.getGuestPetId()),host=Objects.equals(active,p.getHostPetId());if(next.equals("CANCELLED")&&!host)return ResponseEntity.status(403).body(Map.of("error","Only the pet who created this play date can cancel it."));if((next.equals("ACCEPTED")||next.equals("DECLINED"))&&!guest)return ResponseEntity.status(403).body(Map.of("error","Only the invited pet can respond."));p.setStatus(next);return ResponseEntity.ok(playDates.save(p));}).orElseGet(()->ResponseEntity.notFound().build());}
 
   @GetMapping("/meetups") public List<Meetup> meetups(){return meetups.findAllByOrderByScheduledAtAsc();}
   @PostMapping("/meetups") public ResponseEntity<Meetup> meetup(@RequestBody Meetup m){return ResponseEntity.status(201).body(meetups.save(m));}
@@ -54,4 +56,5 @@ public class SocialController {
   @PostMapping("/memories") public ResponseEntity<PetMemory> memory(@RequestBody PetMemory m){return ResponseEntity.status(201).body(memories.save(m));}
 
   @GetMapping("/health") public Map<String,Object> health(){return Map.of("status","UP","modules",List.of("profiles","posts","follows","friends","reminders","playDates","meetups","sitters","orders","memories"));}
+  private Long activePet(HttpSession session){Object x=session.getAttribute("activePetId");return x instanceof Long?(Long)x:null;}
 }
