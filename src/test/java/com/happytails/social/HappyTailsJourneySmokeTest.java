@@ -63,10 +63,11 @@ class HappyTailsJourneySmokeTest {
 
     mvc.perform(post("/api/social/play-dates").session(max.session)
         .contentType("application/json")
-        .content("{\"guestPetId\":"+luna.petId+",\"place\":\"Boston Common\",\"scheduledAt\":\"2030-08-24T10:00:00\"}"))
+        .content("{\"guestPetId\":"+luna.petId+",\"location\":\"Boston Common\",\"scheduledAt\":\"2030-08-24T10:00:00\"}"))
       .andExpect(status().isCreated())
       .andExpect(jsonPath("$.hostPetId").value(max.petId))
       .andExpect(jsonPath("$.guestPetId").value(luna.petId))
+      .andExpect(jsonPath("$.location").value("Boston Common"))
       .andExpect(jsonPath("$.status").value("PENDING"));
 
     mvc.perform(get("/api/social/profiles/{id}/reminders",luna.petId).session(max.session))
