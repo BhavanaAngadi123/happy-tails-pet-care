@@ -12,9 +12,7 @@ import org.springframework.stereotype.Component;
  *
  * The prototype originally relied on Hibernate ddl-auto=update. As the pet
  * identity model grew, an existing production PostgreSQL database could lag
- * behind the Java entity and fail reads before users reached the application.
- * These ADD COLUMN IF NOT EXISTS statements make the upgrade explicit and safe
- * for both an existing Render database and a fresh local database.
+ * behind the Java entity and fail reads/writes before users reached the app.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -37,8 +35,10 @@ public class DatabaseCompatibilityMigration implements ApplicationRunner {
     add("message_permission", "varchar(255) default 'EVERYONE'");
     add("play_date_permission", "varchar(255) default 'EVERYONE'");
 
-    // Normalize legacy rows so primitive boolean fields and privacy rules have
-    // deterministic values after the upgrade.
+    // Legacy databases created avatar_url as varchar(255). Pet photos are stored
+    // as compressed data URLs, so production must allow larger values.
+    jdbc.execute("alter table pet_profiles alter column avatar_url type text");
+
     jdbc.execute("update pet_profiles set private_account=false where private_account is null");
     jdbc.execute("update pet_profiles set show_location=true where show_location is null");
     jdbc.execute("update pet_profiles set message_permission='EVERYONE' where message_permission is null or trim(message_permission)='' ");
