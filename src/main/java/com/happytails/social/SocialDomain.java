@@ -17,6 +17,7 @@ class PetProfile extends BaseEntity {
   @Column(length=1000000) String avatarUrl;
   String location;
   LocalDate birthday;
+  LocalDate adoptionDate;
   Integer age;
   String gender;
   String personality;
@@ -32,6 +33,7 @@ class PetProfile extends BaseEntity {
   public String getAvatarUrl(){return avatarUrl;} public void setAvatarUrl(String v){avatarUrl=v;}
   public String getLocation(){return location;} public void setLocation(String v){location=v;}
   public LocalDate getBirthday(){return birthday;} public void setBirthday(LocalDate v){birthday=v;}
+  public LocalDate getAdoptionDate(){return adoptionDate;} public void setAdoptionDate(LocalDate v){adoptionDate=v;}
   public Integer getAge(){return age;} public void setAge(Integer v){age=v;}
   public String getGender(){return gender;} public void setGender(String v){gender=v;}
   public String getPersonality(){return personality;} public void setPersonality(String v){personality=v;}
@@ -87,7 +89,7 @@ class PetReminder extends BaseEntity {
 
 @Entity @Table(name="play_dates")
 class PlayDate extends BaseEntity {
-  Long hostPetId; Long guestPetId; String location; LocalDateTime scheduledAt; String status="PENDING";
+  Long hostPetId; Long guestPetId; String location; LocalDateTime scheduledAt; String status="PLANNED";
   public PlayDate(){}
   public Long getHostPetId(){return hostPetId;} public void setHostPetId(Long v){hostPetId=v;}
   public Long getGuestPetId(){return guestPetId;} public void setGuestPetId(Long v){guestPetId=v;}
