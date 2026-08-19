@@ -14,7 +14,7 @@
   <div class="card">
     <h2>Add a pet</h2>
     <form id="petForm">
-      <input id="name" placeholder="Pet name" required>
+      <input id="petName" placeholder="Pet name" required>
       <input id="species" placeholder="Species" required>
       <input id="breed" placeholder="Breed">
       <input id="age" type="number" min="0" placeholder="Age" required>
@@ -24,8 +24,22 @@
   </div>
   <div class="card"><h2>Pet directory</h2><div id="pets">Loading...</div></div>
 <script>
-async function loadPets(){const r=await fetch('/api/pets');const pets=await r.json();document.getElementById('pets').innerHTML=pets.length?pets.map(p=>`<div class="pet"><strong>${p.name}</strong> — ${p.species}${p.breed?' / '+p.breed:''}, age ${p.age}${p.ownerName?' · Owner: '+p.ownerName:''}</div>`).join(''):'No pets added yet.'}
-document.getElementById('petForm').addEventListener('submit',async e=>{e.preventDefault();const body={name:name.value,species:species.value,breed:breed.value,age:Number(age.value),ownerName:ownerName.value};await fetch('/api/pets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});e.target.reset();loadPets();});
+const value = id => document.getElementById(id).value;
+async function loadPets(){
+  const r=await fetch('/api/pets');
+  const pets=await r.json();
+  document.getElementById('pets').innerHTML=pets.length
+    ? pets.map(p=>`<div class="pet"><strong>${p.name}</strong> — ${p.species}${p.breed?' / '+p.breed:''}, age ${p.age}${p.ownerName?' · Owner: '+p.ownerName:''}</div>`).join('')
+    : 'No pets added yet.';
+}
+document.getElementById('petForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const body={name:value('petName'),species:value('species'),breed:value('breed'),age:Number(value('age')),ownerName:value('ownerName')};
+  const response=await fetch('/api/pets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!response.ok){alert('Unable to save pet. Check the form and try again.');return;}
+  e.target.reset();
+  await loadPets();
+});
 loadPets();
 </script>
 </body>
