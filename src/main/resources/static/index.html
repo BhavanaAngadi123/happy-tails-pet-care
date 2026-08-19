@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Happy Tails Pet Care</title>
+  <style>
+    body{font-family:Arial,sans-serif;max-width:980px;margin:40px auto;padding:0 20px;background:#f7f8fb;color:#20242a}h1{margin-bottom:6px}.card{background:white;border-radius:14px;padding:20px;margin:18px 0;box-shadow:0 4px 18px rgba(0,0,0,.07)}input{padding:10px;margin:5px;width:180px}button{padding:10px 14px;border:0;border-radius:8px;cursor:pointer}.pet{padding:12px 0;border-bottom:1px solid #eee}.muted{color:#666}
+  </style>
+</head>
+<body>
+  <h1>Happy Tails</h1>
+  <p class="muted">Java + Spring Boot pet care management platform</p>
+  <div class="card">
+    <h2>Add a pet</h2>
+    <form id="petForm">
+      <input id="petName" placeholder="Pet name" required>
+      <input id="species" placeholder="Species" required>
+      <input id="breed" placeholder="Breed">
+      <input id="age" type="number" min="0" placeholder="Age" required>
+      <input id="ownerName" placeholder="Owner name">
+      <button type="submit">Save Pet</button>
+    </form>
+  </div>
+  <div class="card"><h2>Pet directory</h2><div id="pets">Loading...</div></div>
+<script>
+const value = id => document.getElementById(id).value;
+async function loadPets(){
+  const r=await fetch('/api/pets');
+  const pets=await r.json();
+  document.getElementById('pets').innerHTML=pets.length
+    ? pets.map(p=>`<div class="pet"><strong>${p.name}</strong> — ${p.species}${p.breed?' / '+p.breed:''}, age ${p.age}${p.ownerName?' · Owner: '+p.ownerName:''}</div>`).join('')
+    : 'No pets added yet.';
+}
+document.getElementById('petForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const body={name:value('petName'),species:value('species'),breed:value('breed'),age:Number(value('age')),ownerName:value('ownerName')};
+  const response=await fetch('/api/pets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!response.ok){alert('Unable to save pet. Check the form and try again.');return;}
+  e.target.reset();
+  await loadPets();
+});
+loadPets();
+</script>
+</body>
+</html>

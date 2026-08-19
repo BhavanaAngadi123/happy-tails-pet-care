@@ -1,154 +1,100 @@
 # Happy Tails 🐾
 
-### Pet Care Management System
+A Java full-stack pet care application built with Spring Boot. The project demonstrates layered backend design, REST APIs, relational persistence, validation, automated testing, Docker packaging, and CI.
 
-Happy Tails is a full-stack web application designed to bring common pet-care activities into one platform. It supports pet owners, pet sitters, sellers, and community members through pet profiles, social interactions, sitter bookings, shopping, and lost-and-found workflows.
+## What it does
 
-This project demonstrates backend development with Python and Flask, relational database design with MySQL and SQLAlchemy, server-rendered web interfaces, authentication-oriented application structure, email integration, and modular application design.
-
-## Key Features
-
-- **Pet Profiles & Social Feed** — Create pet profiles and share community posts.
-- **Pet Sitting & Bookings** — Support sitter availability and pet-care booking workflows.
-- **Pet Commerce** — Browse products and manage shopping/order workflows.
-- **Lost & Found** — Report missing pets and share sightings with the community.
-- **Email Notifications** — SMTP-based application notifications.
-- **Modular Architecture** — Separate routes, models, templates, static resources, configuration, and utilities for maintainability.
+- Create, view, update, delete, and filter pet profiles.
+- Store pet information through Spring Data JPA.
+- Expose REST endpoints under `/api/pets`.
+- Serve a lightweight browser UI from Spring Boot.
+- Run locally with H2 or connect to PostgreSQL using environment variables.
+- Verify the API with Spring Boot integration tests.
 
 ## Tech Stack
 
-| Area | Technologies |
-| --- | --- |
-| Backend | Python, Flask |
-| Database | MySQL, SQLAlchemy |
-| Frontend | HTML, CSS, JavaScript, Jinja Templates |
-| Email | Flask-Mail, SMTP |
-| Configuration | python-dotenv |
-| Database Management | Flask-Migrate |
-| Version Control | Git, GitHub |
+- Java 17
+- Spring Boot
+- Spring Web / REST
+- Spring Data JPA / Hibernate
+- H2 and PostgreSQL
+- Maven
+- HTML, CSS, JavaScript
+- JUnit / MockMvc
+- Docker
+- GitHub Actions
 
 ## Architecture
 
-The application follows a modular Flask structure with dedicated components for routing, database models, reusable utilities, templates, and static assets.
+```text
+src/main/java/com/happytails/
+├── HappyTailsApplication.java
+└── pet/
+    ├── Pet.java
+    ├── PetController.java
+    ├── PetRepository.java
+    └── PetService.java
+```
+
+The API follows a controller → service → repository structure so HTTP handling, business logic, and persistence remain separated.
+
+## REST API
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/pets` | List pets |
+| GET | `/api/pets?species=Dog` | Filter by species |
+| GET | `/api/pets/{id}` | Get one pet |
+| POST | `/api/pets` | Create a pet |
+| PUT | `/api/pets/{id}` | Update a pet |
+| DELETE | `/api/pets/{id}` | Delete a pet |
+
+## Run locally
+
+```bash
+git clone https://github.com/BhavanaAngadi123/happy-tails-pet-care.git
+cd happy-tails-pet-care
+mvn spring-boot:run
+```
+
+Open `http://localhost:8080`.
+
+The default profile uses an in-memory H2 database, so the project runs without external setup.
+
+## PostgreSQL
+
+Set these environment variables before starting the app:
 
 ```text
-Angadi_Bhavana_COMP_699_C/
-├── app.py
-├── config.py
-├── init_db.py
-├── models/
-├── routes/
-├── static/
-├── templates/
-├── utils/
-├── requirements.txt
-└── .env.example
+DATABASE_URL=jdbc:postgresql://localhost:5432/happytails
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=your_password
 ```
 
-### Application Package Diagram
-
-<img width="1199" height="778" alt="Happy Tails application package diagram" src="https://github.com/user-attachments/assets/9f0617b1-52d4-4e2a-a398-becf7b48b44d" />
-
-## Getting Started
-
-### Prerequisites
-
-Install:
-
-- Python 3.10+
-- pip
-- MySQL Server 8.0+
-- Git
-
-### 1. Clone the repository
+## Test
 
 ```bash
-git clone https://github.com/BhavanaAngadi123/Angadi_Bhavana_COMP_699_C.git
-cd Angadi_Bhavana_COMP_699_C
+mvn clean test
 ```
 
-### 2. Create a virtual environment
-
-**Windows**
+## Docker
 
 ```bash
-python -m venv venv
-venv\Scripts\activate
+docker build -t happy-tails .
+docker run -p 8080:8080 happy-tails
 ```
-
-**macOS/Linux**
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Configure environment variables
-
-Copy `.env.example` to `.env` and replace the placeholder values with your local configuration.
-
-```bash
-cp .env.example .env
-```
-
-Example database configuration:
-
-```text
-DATABASE_URL=mysql+pymysql://USERNAME:PASSWORD@127.0.0.1:3306/happytails
-```
-
-Never commit your `.env` file or real credentials to source control.
-
-### 5. Create the database
-
-In MySQL:
-
-```sql
-CREATE DATABASE happytails;
-```
-
-Initialize the application tables:
-
-```bash
-python init_db.py
-```
-
-### 6. Run the application
-
-```bash
-python app.py
-```
-
-Open `http://127.0.0.1:5000` in your browser.
 
 ## Engineering Highlights
 
-- Organized Flask application into reusable models, routes, utilities, templates, and configuration modules.
-- Used SQLAlchemy for relational data access and MySQL persistence.
-- Implemented environment-based configuration to keep application settings separate from source code.
-- Integrated email functionality through Flask-Mail and SMTP.
-- Designed the system around multiple user workflows rather than a single-purpose CRUD interface.
-
-## Security
-
-Sensitive values such as database credentials, application secrets, and email passwords must be stored locally in `.env`. The repository includes `.env.example` only as a configuration template.
-
-## Future Improvements
-
-- Add automated unit and integration tests.
-- Add CI checks with GitHub Actions.
-- Containerize the application with Docker.
-- Add production deployment configuration.
-- Expand API documentation and application screenshots.
+- Layered Spring Boot design with controller, service, repository, and entity components.
+- RESTful CRUD API with Jakarta Bean Validation.
+- Environment-driven database configuration for local and hosted environments.
+- Integration testing with Spring Boot, JUnit, MockMvc, and H2.
+- Multi-stage Docker build for portable deployment.
+- GitHub Actions CI runs Maven tests on pushes and pull requests.
 
 ## Author
 
 **Bhavana Angadi**
 
-Graduate software development project focused on building a practical, multi-module pet-care web platform with Python, Flask, and MySQL.
+Portfolio project focused on practical Java backend and full-stack software engineering.
