@@ -52,6 +52,8 @@ def login():
             session.clear()
             session["user_id"] = user.id
             session["user_role"] = user.role
+            # Backward compatibility for older routes that still read "role".
+            session["role"] = user.role
             session["user_name"] = user.name
             flash(f"Welcome {user.name}!", "success")
 
