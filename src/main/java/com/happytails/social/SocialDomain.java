@@ -87,7 +87,7 @@ class PetReminder extends BaseEntity {
 
 @Entity @Table(name="play_dates")
 class PlayDate extends BaseEntity {
-  Long hostPetId; Long guestPetId; String location; LocalDateTime scheduledAt; String status="PLANNED";
+  Long hostPetId; Long guestPetId; String location; LocalDateTime scheduledAt; String status="PENDING";
   public PlayDate(){}
   public Long getHostPetId(){return hostPetId;} public void setHostPetId(Long v){hostPetId=v;}
   public Long getGuestPetId(){return guestPetId;} public void setGuestPetId(Long v){guestPetId=v;}
