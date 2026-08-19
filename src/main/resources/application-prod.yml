@@ -1,6 +1,6 @@
 spring:
   main:
-    lazy-initialization: true
+    lazy-initialization: false
   datasource:
     url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
     username: ${DB_USER}
@@ -14,8 +14,9 @@ spring:
   data:
     jpa:
       repositories:
-        bootstrap-mode: lazy
+        bootstrap-mode: default
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     open-in-view: false
