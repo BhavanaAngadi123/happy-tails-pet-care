@@ -16,6 +16,8 @@ class PetProfile extends BaseEntity {
   String species; String breed; String bio;
   @Column(length=1000000) String avatarUrl;
   String location;
+  LocalDate birthday;
+  Integer age;
   int followers; int following;
   public PetProfile(){}
   public String getHandle(){return handle;} public void setHandle(String v){handle=v;}
@@ -25,6 +27,8 @@ class PetProfile extends BaseEntity {
   public String getBio(){return bio;} public void setBio(String v){bio=v;}
   public String getAvatarUrl(){return avatarUrl;} public void setAvatarUrl(String v){avatarUrl=v;}
   public String getLocation(){return location;} public void setLocation(String v){location=v;}
+  public LocalDate getBirthday(){return birthday;} public void setBirthday(LocalDate v){birthday=v;}
+  public Integer getAge(){return age;} public void setAge(Integer v){age=v;}
   public int getFollowers(){return followers;} public void setFollowers(int v){followers=v;}
   public int getFollowing(){return following;} public void setFollowing(int v){following=v;}
 }
