@@ -17,7 +17,7 @@ spring:
         bootstrap-mode: lazy
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     open-in-view: false
     properties:
       hibernate:
@@ -30,6 +30,13 @@ server:
   address: 0.0.0.0
   port: ${PORT:10000}
   shutdown: graceful
+  servlet:
+    session:
+      timeout: 7d
+      cookie:
+        http-only: true
+        secure: true
+        same-site: lax
 management:
   endpoints:
     web:
