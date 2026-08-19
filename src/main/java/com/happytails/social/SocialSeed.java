@@ -1,15 +1,28 @@
 package com.happytails.social;
 
-import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import java.time.*;
 
 @Component
-class SocialSeed implements CommandLineRunner {
+class SocialSeed {
   private final PetProfileRepository profiles; private final SocialPostRepository posts; private final PetReminderRepository reminders;
   private final MeetupRepository meetups; private final PetSitterRepository sitters; private final PetMemoryRepository memories;
   SocialSeed(PetProfileRepository profiles,SocialPostRepository posts,PetReminderRepository reminders,MeetupRepository meetups,PetSitterRepository sitters,PetMemoryRepository memories){this.profiles=profiles;this.posts=posts;this.reminders=reminders;this.meetups=meetups;this.sitters=sitters;this.memories=memories;}
-  public void run(String...args){
+
+  @EventListener(ApplicationReadyEvent.class)
+  public void seedAfterStartup(){
+    Thread t=new Thread(this::seedSafely,"happy-tails-demo-seed");
+    t.setDaemon(true);
+    t.start();
+  }
+
+  private void seedSafely(){
+    try { seed(); } catch (Exception ex) { System.err.println("Demo seed skipped: "+ex.getMessage()); }
+  }
+
+  private void seed(){
     if(profiles.count()>0)return;
     PetProfile buddy=pet("@buddy_thegolden","Buddy","Dog","Golden Retriever","Fetch expert. Treat enthusiast. Making new pet friends!","Bengaluru",1200,320);
     pet("@coco_poodle","Coco","Dog","Poodle","Playful, curly and always ready for a walk.","Bengaluru",834,181);
