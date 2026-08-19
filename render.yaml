@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: happy-tails-pet-care
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    autoDeploy: true
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DB_HOST
+        fromDatabase:
+          name: happy-tails-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: happy-tails-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: happy-tails-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: happy-tails-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: happy-tails-db
+          property: password
+
+databases:
+  - name: happy-tails-db
+    plan: free
+    databaseName: happytails
+    user: happytails
