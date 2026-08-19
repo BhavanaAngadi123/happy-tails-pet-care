@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: happy-tails
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:mem:happytails;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  h2:
+    console:
+      enabled: true
+server:
+  port: ${PORT:8080}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
