@@ -23,6 +23,10 @@ class PetProfile extends BaseEntity {
   String personality;
   String favoriteActivities;
   String petPreferences;
+  boolean privateAccount=false;
+  boolean showLocation=true;
+  String messagePermission="EVERYONE";
+  String playDatePermission="EVERYONE";
   int followers; int following;
   public PetProfile(){}
   public String getHandle(){return handle;} public void setHandle(String v){handle=v;}
@@ -39,6 +43,10 @@ class PetProfile extends BaseEntity {
   public String getPersonality(){return personality;} public void setPersonality(String v){personality=v;}
   public String getFavoriteActivities(){return favoriteActivities;} public void setFavoriteActivities(String v){favoriteActivities=v;}
   public String getPetPreferences(){return petPreferences;} public void setPetPreferences(String v){petPreferences=v;}
+  public boolean isPrivateAccount(){return privateAccount;} public void setPrivateAccount(boolean v){privateAccount=v;}
+  public boolean isShowLocation(){return showLocation;} public void setShowLocation(boolean v){showLocation=v;}
+  public String getMessagePermission(){return messagePermission;} public void setMessagePermission(String v){messagePermission=v;}
+  public String getPlayDatePermission(){return playDatePermission;} public void setPlayDatePermission(String v){playDatePermission=v;}
   public int getFollowers(){return followers;} public void setFollowers(int v){followers=v;}
   public int getFollowing(){return following;} public void setFollowing(int v){following=v;}
 }
