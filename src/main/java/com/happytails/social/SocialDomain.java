@@ -13,7 +13,9 @@ abstract class BaseEntity {
 class PetProfile extends BaseEntity {
   @Column(nullable=false,unique=true) String handle;
   @Column(nullable=false) String name;
-  String species; String breed; String bio; String avatarUrl; String location;
+  String species; String breed; String bio;
+  @Column(length=1000000) String avatarUrl;
+  String location;
   int followers; int following;
   public PetProfile(){}
   public String getHandle(){return handle;} public void setHandle(String v){handle=v;}
