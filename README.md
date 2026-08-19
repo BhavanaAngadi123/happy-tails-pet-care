@@ -1,54 +1,135 @@
 # Happy Tails 🐾
 
-A Java full-stack pet care application built with Spring Boot. The project demonstrates layered backend design, REST APIs, relational persistence, validation, automated testing, Docker packaging, CI, and production deployment configuration.
+Happy Tails is a Java full-stack pet social and care platform built with Spring Boot. The core idea is simple: the **pet owns the digital identity**. Each pet has a profile, social graph, posts, memories, care history, reminders, play dates, communities, sitter bookings, and personalized discovery.
 
-## What it does
+This repository has evolved from a basic pet CRUD application into a broader product prototype designed around one persistent pet identity.
 
-- Create, view, update, delete, and filter pet profiles.
-- Store pet information through Spring Data JPA.
-- Expose REST endpoints under `/api/pets`.
-- Serve a lightweight browser UI from Spring Boot.
-- Run locally with H2 or in production with PostgreSQL.
-- Verify the API with Spring Boot integration tests.
+## Product vision
 
-## Tech Stack
+A pet profile can become the center of the pet's digital life:
+
+- Create a pet-first social profile with photo, username, species, breed, birthday, adoption date, location, personality, activities, and preferences.
+- Publish posts and build followers and pet-friend relationships.
+- Discover compatible pets using species, breed, location, age, personality, activities, and user preferences.
+- Send friend requests and pet-to-pet messages.
+- Schedule play-date requests and accept, decline, cancel, or message around confirmed plans.
+- Join species, breed, local, and mixed-pet communities.
+- Discover pet-friendly meetups.
+- Maintain private health and care information through a Pet Health Passport.
+- Track vaccinations, vet visits, medications, grooming, dental care, and future reminders.
+- Book pet sitters for the active pet and track booking status.
+- Save permanent memories, birthdays, Gotcha Days, anniversaries, and "On This Day" moments.
+- Browse a lightweight pet marketplace with toys, snacks, clothing, gifts, care items, travel items, and small-pet products.
+- Control account privacy, location visibility, messaging permissions, play-date permissions, blocking, and reporting.
+
+## Core product principle
+
+Happy Tails is not an owner profile with a pet attached to it.
+
+The **pet is the social identity**. The owner account is used for authentication and management, while posts, follows, friendships, messaging, play dates, communities, memories, care, and recommendations revolve around the active pet.
+
+## Tech stack
 
 - Java 17
-- Spring Boot
+- Spring Boot 3
 - Spring Web / REST
 - Spring Data JPA / Hibernate
-- H2 and PostgreSQL
+- PostgreSQL in production
+- H2 for local development and tests
+- HTML, CSS, and JavaScript frontend served by Spring Boot
 - Maven
-- HTML, CSS, JavaScript
-- JUnit / MockMvc
+- JUnit 5 / MockMvc
+- GitHub Actions CI
 - Docker
-- GitHub Actions
-- Render Blueprint
+- Render deployment
+- Spring Boot Actuator health checks
 
 ## Architecture
 
 ```text
 src/main/java/com/happytails/
 ├── HappyTailsApplication.java
-└── pet/
-    ├── Pet.java
-    ├── PetController.java
-    ├── PetRepository.java
-    └── PetService.java
+└── social/
+    ├── AppPageController.java
+    ├── AuthController.java
+    ├── SocialController.java
+    ├── SocialDomain.java
+    ├── SocialRepositories.java
+    ├── PetMessaging.java
+    ├── PetHealthPassport.java
+    ├── PetCommunities.java
+    ├── SafetyController.java
+    ├── SitterBooking.java
+    └── SocialSeed.java
+
+src/main/resources/static/
+├── index.html
+├── login.html
+├── profile-editor.js
+├── social-experience.js
+├── messaging.js
+├── playdate-flow.js
+├── health-passport.js
+├── sitter-booking.js
+├── memories-milestones.js
+├── communities.js
+├── smart-discovery.js
+├── trust-safety.js
+├── qa-polish.js
+├── journey-flow.js
+└── visual-system.css
 ```
 
-The API follows a controller → service → repository structure so HTTP handling, business logic, and persistence remain separated.
+The backend uses Spring MVC controllers, JPA entities/repositories, server-side HTTP sessions, and PostgreSQL persistence. The frontend is a lightweight JavaScript application served from the Spring Boot service.
 
-## REST API
+## Main API areas
 
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| GET | `/api/pets` | List pets |
-| GET | `/api/pets?species=Dog` | Filter by species |
-| GET | `/api/pets/{id}` | Get one pet |
-| POST | `/api/pets` | Create a pet |
-| PUT | `/api/pets/{id}` | Update a pet |
-| DELETE | `/api/pets/{id}` | Delete a pet |
+| Area | Example endpoints |
+| --- | --- |
+| Authentication | `/api/auth/signup`, `/api/auth/login`, `/api/auth/session` |
+| Pet management | `/api/auth/pets`, `/api/auth/select-pet/{petId}` |
+| Social profiles | `/api/social/profiles` |
+| Posts | `/api/social/posts` |
+| Follows | `/api/social/follows` |
+| Friend requests | `/api/social/friend-requests` |
+| Messaging | `/api/messages/...` |
+| Play dates | `/api/social/play-dates` |
+| Meetups | `/api/social/meetups` |
+| Health reminders | `/api/social/reminders` |
+| Health Passport | private health APIs under the health module |
+| Memories | `/api/social/memories` |
+| Communities | community APIs under the communities module |
+| Safety | block/report APIs under the safety module |
+| Sitter bookings | sitter-booking APIs |
+
+Private pet data is protected using the active pet stored in the authenticated HTTP session. Sensitive actions do not trust arbitrary pet IDs supplied by the browser.
+
+## Privacy and safety
+
+Happy Tails currently includes prototype-level controls for:
+
+- Public or private pet accounts
+- Location visibility
+- Messaging permissions
+- Play-date request permissions
+- Blocking another pet
+- Reporting a pet profile
+- Private reminders, memories, orders, play dates, and health information
+- Server-side active-pet identity enforcement for sensitive actions
+
+The health area is intentionally separate from public social profile data.
+
+## Testing and QA
+
+Run the complete test suite:
+
+```bash
+mvn clean test
+```
+
+The repository includes a Spring Boot / MockMvc smoke test that covers a core multi-pet journey including signup, pet creation, posts, follows, friend requests, messaging, play dates, private data protection, and identity spoofing protection.
+
+GitHub Actions runs Maven tests on pushes and pull requests.
 
 ## Run locally
 
@@ -58,58 +139,65 @@ cd happy-tails-pet-care
 mvn spring-boot:run
 ```
 
-Open `http://localhost:8080`.
+Open:
 
-The default profile uses an in-memory H2 database, so the project runs without external setup.
+```text
+http://localhost:8080
+```
+
+The default local configuration uses an in-memory H2 database.
 
 ## Local PostgreSQL
 
-Set these environment variables before starting the app:
+You can also run against PostgreSQL by supplying the required datasource environment variables or adapting the local Spring profile.
 
-```text
-DATABASE_URL=jdbc:postgresql://localhost:5432/happytails
-DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=your_password
-```
+Production uses Render-provided PostgreSQL connection details and does not commit database credentials to the repository.
 
-## Production Deployment on Render
+## Production deployment
 
-The repository contains a `render.yaml` Blueprint that provisions both the Spring Boot web service and a PostgreSQL database.
+The project includes `render.yaml` for Render deployment.
 
-1. Make this repository public, or authorize Render to access the private repository.
-2. In Render, create a new Blueprint and select this repository.
-3. Render reads `render.yaml`, builds the included Dockerfile, creates PostgreSQL, injects database credentials, and starts the application with the `prod` Spring profile.
-4. Render verifies the deployment through `/actuator/health`.
+Render provisions:
 
-Production database credentials are supplied by Render and are not committed to source control.
+- Spring Boot web service
+- PostgreSQL database
+- Production environment variables
+- `/actuator/health` health check
+- Automatic deployments from the repository
 
-## Test
+The production Spring profile also enables secure session cookies and disables the H2 console.
 
-```bash
-mvn clean test
-```
+## Current prototype boundaries
 
-## Docker
+This is a working full-stack product prototype, not a finished commercial marketplace. A few areas are intentionally simplified:
 
-```bash
-docker build -t happy-tails .
-docker run -p 8080:8080 happy-tails
-```
+- Sitter confirmation is prototype-driven; sitters do not yet have a separate authentication system.
+- Shopping uses a sample in-app catalog rather than live merchant/payment integrations.
+- Compatibility scoring is transparent rule-based matching rather than machine learning.
+- Real-time messaging currently uses periodic refresh rather than WebSockets.
+- Moderation/reporting is stored and enforced at a basic application level; there is no full admin moderation console yet.
 
-## Engineering Highlights
+These boundaries are deliberate. The focus is demonstrating product architecture and the complete pet-identity concept without pretending unfinished infrastructure already exists.
 
-- Layered Spring Boot design with controller, service, repository, and entity components.
-- RESTful CRUD API with Jakarta Bean Validation.
-- Separate local and production database configuration.
-- PostgreSQL production profile with secrets supplied through environment variables.
-- Integration testing with Spring Boot, JUnit, MockMvc, and H2.
-- Multi-stage Docker build for portable deployment.
-- GitHub Actions CI runs Maven tests on pushes and pull requests.
-- Render Blueprint provisions the application and PostgreSQL infrastructure together.
-- Spring Boot Actuator provides a production health-check endpoint.
+## Engineering highlights
+
+- Pet-first identity model with owner authentication separated from the public pet persona
+- Persistent PostgreSQL-backed social and care data
+- Server-side session ownership checks for sensitive actions
+- Privacy-aware profile and post access
+- Pet-to-pet messaging and unread state
+- Play-date request lifecycle
+- Private Pet Health Passport
+- Communities and meetup discovery
+- Compatibility-based discovery
+- Block/report safety controls
+- End-to-end backend smoke testing
+- Responsive frontend UX and unified design system
+- Docker and Render production configuration
+- GitHub Actions CI
 
 ## Author
 
 **Bhavana Angadi**
 
-Portfolio project focused on practical Java backend and full-stack software engineering.
+Java full-stack project focused on building a cohesive pet social, care, and community platform around a persistent pet identity.
