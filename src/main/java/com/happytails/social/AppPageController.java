@@ -36,7 +36,7 @@ public class AppPageController {
 """;
     html=html.replace("</body>",hardening+"</body>");
     html=html.replace("</head>","<link rel=\"stylesheet\" href=\"/product-ux.css\"></head>");
-    html=html.replace("</body>","<script src=\"/product-ux.js\"></script><script src=\"/profile-editor.js\"></script></body>");
+    html=html.replace("</body>","<script src=\"/product-ux.js\"></script><script src=\"/profile-editor.js\"></script><script src=\"/social-experience.js\"></script></body>");
     return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
   }
 }
