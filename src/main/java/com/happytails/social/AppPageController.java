@@ -87,6 +87,8 @@ public class AppPageController {
 </script>
 """;
     html=html.replace("</body>",hardening+"</body>");
+    html=html.replace("</head>","<link rel=\"stylesheet\" href=\"/product-ux.css\"></head>");
+    html=html.replace("</body>","<script src=\"/product-ux.js\"></script></body>");
     return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
   }
 }
