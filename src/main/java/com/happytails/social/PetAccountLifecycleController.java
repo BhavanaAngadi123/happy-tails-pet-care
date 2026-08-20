@@ -15,8 +15,17 @@ class PetAccountCleanupService {
 
   @Transactional
   public void deletePet(Long petId){
+    // Remove interactions authored by this pet.
     delete("post_paws","pet_profile_id",petId);
     delete("post_comments","pet_profile_id",petId);
+
+    // Remove interactions from every pet on posts that are about to disappear.
+    // Without this, deleting a pet leaves orphaned paw/comment rows behind.
+    em.createNativeQuery("delete from post_paws where post_id in (select id from social_posts where pet_profile_id=:id)")
+      .setParameter("id",petId).executeUpdate();
+    em.createNativeQuery("delete from post_comments where post_id in (select id from social_posts where pet_profile_id=:id)")
+      .setParameter("id",petId).executeUpdate();
+
     delete("pet_community_posts","pet_profile_id",petId);
     delete("pet_community_members","pet_profile_id",petId);
     deleteEither("pet_messages","from_pet_id","to_pet_id",petId);
@@ -36,12 +45,31 @@ class PetAccountCleanupService {
     delete("social_posts","pet_profile_id",petId);
     delete("owner_pet_links","pet_profile_id",petId);
     em.createNativeQuery("delete from pet_profiles where id=:id").setParameter("id",petId).executeUpdate();
+
     recalcSocialCounts();
+    recalcMeetupCounts();
+    recalcCommunityCounts();
   }
 
-  private void delete(String table,String column,Long id){em.createNativeQuery("delete from "+table+" where "+column+"=:id").setParameter("id",id).executeUpdate();}
-  private void deleteEither(String table,String a,String b,Long id){em.createNativeQuery("delete from "+table+" where "+a+"=:id or "+b+"=:id").setParameter("id",id).executeUpdate();}
-  private void recalcSocialCounts(){em.createNativeQuery("update pet_profiles p set followers=(select count(*) from pet_follows f where f.following_pet_id=p.id), following=(select count(*) from pet_follows f where f.follower_pet_id=p.id)").executeUpdate();}
+  private void delete(String table,String column,Long id){
+    em.createNativeQuery("delete from "+table+" where "+column+"=:id").setParameter("id",id).executeUpdate();
+  }
+
+  private void deleteEither(String table,String a,String b,Long id){
+    em.createNativeQuery("delete from "+table+" where "+a+"=:id or "+b+"=:id").setParameter("id",id).executeUpdate();
+  }
+
+  private void recalcSocialCounts(){
+    em.createNativeQuery("update pet_profiles p set followers=(select count(*) from pet_follows f where f.following_pet_id=p.id), following=(select count(*) from pet_follows f where f.follower_pet_id=p.id)").executeUpdate();
+  }
+
+  private void recalcMeetupCounts(){
+    em.createNativeQuery("update pet_meetups m set attendee_count=(select count(*) from meetup_attendees a where a.meetup_id=m.id)").executeUpdate();
+  }
+
+  private void recalcCommunityCounts(){
+    em.createNativeQuery("update pet_communities c set member_count=(select count(*) from pet_community_members m where m.community_id=c.id)").executeUpdate();
+  }
 }
 
 @RestController
