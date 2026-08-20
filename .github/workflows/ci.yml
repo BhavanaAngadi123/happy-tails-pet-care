@@ -16,4 +16,7 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
-      - run: mvn -B clean test
+      - name: Verify Spring Boot application
+        run: mvn -B clean verify
+      - name: Verify production Docker image builds
+        run: docker build -t happy-tails-ci .
