@@ -32,8 +32,8 @@ class PetDeletionAuthorizationTest {
  @Test void ownerCannotDeleteAnotherOwnersPet() throws Exception {
   MockHttpSession first=signup("delete-owner-a@example.com");
   MockHttpSession second=signup("delete-owner-b@example.com");
-  long чужой=createPet(second,"Luna","delete_luna_other");
-  mvc.perform(delete("/api/auth/pets/{id}",чужой).session(first).contentType("application/json").content("{\"confirmName\":\"Luna\"}"))
+  long otherPet=createPet(second,"Luna","delete_luna_other");
+  mvc.perform(delete("/api/auth/pets/{id}",otherPet).session(first).contentType("application/json").content("{\"confirmName\":\"Luna\"}"))
     .andExpect(status().isForbidden());
  }
 
