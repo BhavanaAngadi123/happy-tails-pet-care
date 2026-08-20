@@ -20,25 +20,52 @@ public class CredentialSessionFilter extends OncePerRequestFilter {
 
  @Override
  protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain) throws ServletException,IOException {
-  HttpSession session=request.getSession(false);
-  if(session!=null){
-   Object owner=session.getAttribute("ownerId");
-   Object sessionVersion=session.getAttribute("credentialVersion");
+  HttpSession before=request.getSession(false);
+  if(before!=null){
+   Object owner=before.getAttribute("ownerId");
+   Object sessionVersion=before.getAttribute("credentialVersion");
    if(owner instanceof Long ownerId){
     long current=versions.current(ownerId);
-    if(!(sessionVersion instanceof Long) || ((Long)sessionVersion)!=current){
-     session.invalidate();
-     if(request.getRequestURI().startsWith("/api/")){
-      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-      response.setContentType("application/json");
-      response.getWriter().write("{\"error\":\"Your session expired because account credentials changed. Please log in again.\"}");
-      return;
-     }
-     response.sendRedirect("/login.html");
+    if(sessionVersion instanceof Long && ((Long)sessionVersion)!=current){
+     before.invalidate();
+     reject(request,response);
+     return;
+    }
+    if(sessionVersion==null && !isAuthenticationEntry(request)){
+     before.invalidate();
+     reject(request,response);
      return;
     }
    }
   }
+
   chain.doFilter(request,response);
+
+  if(response.getStatus()>=200&&response.getStatus()<300){
+   HttpSession after=request.getSession(false);
+   if(after==null)return;
+   Object owner=after.getAttribute("ownerId");
+   if(!(owner instanceof Long ownerId))return;
+   String path=request.getRequestURI();
+   if("POST".equals(request.getMethod())&&"/api/auth/change-password".equals(path)){
+    after.setAttribute("credentialVersion",versions.rotate(ownerId));
+   }else if(isAuthenticationEntry(request)||after.getAttribute("credentialVersion")==null){
+    after.setAttribute("credentialVersion",versions.current(ownerId));
+   }
+  }
+ }
+
+ private boolean isAuthenticationEntry(HttpServletRequest request){
+  if(!"POST".equals(request.getMethod()))return false;
+  String path=request.getRequestURI();
+  return "/api/auth/login".equals(path)||"/api/auth/signup".equals(path);
+ }
+
+ private void reject(HttpServletRequest request,HttpServletResponse response)throws IOException{
+  if(request.getRequestURI().startsWith("/api/")){
+   response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+   response.setContentType("application/json");
+   response.getWriter().write("{\"error\":\"Your session expired because account credentials changed. Please log in again.\"}");
+  }else response.sendRedirect("/login.html");
  }
 }
