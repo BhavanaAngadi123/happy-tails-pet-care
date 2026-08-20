@@ -33,7 +33,7 @@ server:
   shutdown: graceful
   servlet:
     session:
-      timeout: 7d
+      timeout: 24h
       cookie:
         http-only: true
         secure: true
