@@ -81,6 +81,43 @@ class HappyTailsJourneySmokeTest {
   }
 
   @Test
+  void pawsToggleOncePerPetAndLegacyRouteUsesSameState() throws Exception {
+    AccountPet max=createAccountAndPet("qa-paw-max@example.com","Max Paw","qa_paw_max","Dog","Retriever","Boston, MA");
+    MvcResult created=mvc.perform(post("/api/social/posts").session(max.session)
+        .contentType("application/json").content("{\"caption\":\"Paw integrity\"}"))
+      .andExpect(status().isCreated()).andReturn();
+    long postId=json.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+
+    mvc.perform(post("/api/social/posts/{id}/paw",postId).session(max.session))
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.pawed").value(true))
+      .andExpect(jsonPath("$.pawCount").value(1));
+
+    mvc.perform(post("/api/interactions/posts/{id}/paw",postId).session(max.session))
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.pawed").value(false))
+      .andExpect(jsonPath("$.pawCount").value(0));
+  }
+
+  @Test
+  void shopIgnoresClientPriceAndUsesServerCatalog() throws Exception {
+    AccountPet max=createAccountAndPet("qa-shop@example.com","Shop Max","qa_shop_max","Dog","Retriever","Boston, MA");
+
+    mvc.perform(post("/api/social/orders").session(max.session)
+        .contentType("application/json")
+        .content("{\"productId\":\"toy-rope\",\"quantity\":2,\"totalAmount\":0.01,\"itemName\":\"Forged Item\"}"))
+      .andExpect(status().isCreated())
+      .andExpect(jsonPath("$.itemName").value("Adventure Rope Toy"))
+      .andExpect(jsonPath("$.quantity").value(2))
+      .andExpect(jsonPath("$.totalAmount").value(29.98));
+
+    mvc.perform(post("/api/social/orders").session(max.session)
+        .contentType("application/json")
+        .content("{\"productId\":\"not-real\",\"quantity\":1}"))
+      .andExpect(status().isBadRequest());
+  }
+
+  @Test
   void unauthenticatedPrivateActionsAreRejected() throws Exception {
     mvc.perform(post("/api/social/posts").contentType("application/json").content("{\"caption\":\"No session\"}"))
       .andExpect(status().isUnauthorized());
