@@ -41,16 +41,23 @@ interface PetReportRepository extends JpaRepository<PetReport,Long>{List<PetRepo
 @RestController
 @RequestMapping("/api/safety")
 class SafetyController {
-  private final PetBlockRepository blocks; private final PetReportRepository reports; private final PetProfileRepository profiles;
-  SafetyController(PetBlockRepository blocks,PetReportRepository reports,PetProfileRepository profiles){this.blocks=blocks;this.reports=reports;this.profiles=profiles;}
+  private final PetBlockRepository blocks; private final PetReportRepository reports; private final PetProfileRepository profiles; private final PetFollowRepository follows; private final FriendRequestRepository requests;
+  SafetyController(PetBlockRepository blocks,PetReportRepository reports,PetProfileRepository profiles,PetFollowRepository follows,FriendRequestRepository requests){this.blocks=blocks;this.reports=reports;this.profiles=profiles;this.follows=follows;this.requests=requests;}
   private Long active(HttpSession s){Object x=s.getAttribute("activePetId");return x instanceof Long?(Long)x:null;}
   private ResponseEntity<Map<String,String>> unauth(){return ResponseEntity.status(401).body(Map.of("error","Please log in first."));}
 
   @GetMapping("/blocked") ResponseEntity<?> blocked(HttpSession s){Long me=active(s);if(me==null)return unauth();return ResponseEntity.ok(blocks.findByBlockerPetId(me));}
 
-  @PostMapping("/block/{petId}") ResponseEntity<?> block(@PathVariable Long petId,HttpSession s){Long me=active(s);if(me==null)return unauth();if(Objects.equals(me,petId))return ResponseEntity.badRequest().body(Map.of("error","You cannot block your own pet profile."));if(!profiles.existsById(petId))return ResponseEntity.notFound().build();if(blocks.existsByBlockerPetIdAndBlockedPetId(me,petId))return ResponseEntity.ok(Map.of("status","already-blocked"));PetBlock b=new PetBlock();b.setBlockerPetId(me);b.setBlockedPetId(petId);return ResponseEntity.status(201).body(blocks.save(b));}
+  @PostMapping("/block/{petId}") ResponseEntity<?> block(@PathVariable Long petId,HttpSession s){Long me=active(s);if(me==null)return unauth();if(Objects.equals(me,petId))return ResponseEntity.badRequest().body(Map.of("error","You cannot block your own pet profile."));if(!profiles.existsById(petId))return ResponseEntity.notFound().build();if(blocks.existsByBlockerPetIdAndBlockedPetId(me,petId))return ResponseEntity.ok(Map.of("status","already-blocked"));PetBlock b=new PetBlock();b.setBlockerPetId(me);b.setBlockedPetId(petId);PetBlock saved=blocks.save(b);severRelationship(me,petId);return ResponseEntity.status(201).body(saved);}
 
   @DeleteMapping("/block/{petId}") ResponseEntity<?> unblock(@PathVariable Long petId,HttpSession s){Long me=active(s);if(me==null)return unauth();return blocks.findByBlockerPetIdAndBlockedPetId(me,petId).<ResponseEntity<?>>map(b->{blocks.delete(b);return ResponseEntity.ok(Map.of("status","unblocked"));}).orElseGet(()->ResponseEntity.notFound().build());}
 
   @PostMapping("/report/{petId}") ResponseEntity<?> report(@PathVariable Long petId,@RequestBody Map<String,String> req,HttpSession s){Long me=active(s);if(me==null)return unauth();if(Objects.equals(me,petId))return ResponseEntity.badRequest().body(Map.of("error","You cannot report your own pet profile."));if(!profiles.existsById(petId))return ResponseEntity.notFound().build();String reason=req.getOrDefault("reason","").trim();if(reason.isBlank())return ResponseEntity.badRequest().body(Map.of("error","Choose a report reason."));PetReport r=new PetReport();r.setReporterPetId(me);r.setReportedPetId(petId);r.setReason(reason);r.setDetails(req.getOrDefault("details","").trim());return ResponseEntity.status(201).body(reports.save(r));}
+
+  private void severRelationship(Long a,Long b){
+    follows.findByFollowerPetIdAndFollowingPetId(a,b).ifPresent(f->{follows.delete(f);adjustFollowCounts(a,b);});
+    follows.findByFollowerPetIdAndFollowingPetId(b,a).ifPresent(f->{follows.delete(f);adjustFollowCounts(b,a);});
+    requests.deleteAll(requests.findByFromPetIdAndToPetIdOrFromPetIdAndToPetId(a,b,b,a));
+  }
+  private void adjustFollowCounts(Long follower,Long following){profiles.findById(follower).ifPresent(p->{p.setFollowing(Math.max(0,p.getFollowing()-1));profiles.save(p);});profiles.findById(following).ifPresent(p->{p.setFollowers(Math.max(0,p.getFollowers()-1));profiles.save(p);});}
 }
