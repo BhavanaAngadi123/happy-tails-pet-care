@@ -33,24 +33,31 @@ public class AbuseRateLimitFilter extends OncePerRequestFilter {
     String key=clientKey(request)+"|"+method+"|"+bucketPath(path);
     long now=Instant.now().toEpochMilli();
     Bucket b=buckets.computeIfAbsent(key,k->new Bucket(now));
-    boolean blocked;
-    synchronized(b){
-      if(now-b.windowStart>=WINDOW_MS){b.windowStart=now;b.count=0;}
-      b.count++;
-      blocked=b.count>limit;
-    }
 
-    if(blocked){
-      response.setStatus(429);
-      response.setContentType("application/json");
-      response.setHeader("Retry-After","60");
-      response.getWriter().write("{\"error\":\"Too many requests. Please wait a moment and try again.\"}");
+    if(isLogin(method,path)){
+      if(isBlocked(b,limit,now)){
+        reject(response);cleanupOccasionally(now);return;
+      }
+      chain.doFilter(request,response);
+      if(response.getStatus()==HttpServletResponse.SC_UNAUTHORIZED)increment(b,now);
       cleanupOccasionally(now);
       return;
+    }
+
+    increment(b,now);
+    if(isBlockedAfterIncrement(b,limit,now)){
+      reject(response);cleanupOccasionally(now);return;
     }
     cleanupOccasionally(now);
     chain.doFilter(request,response);
   }
+
+  private boolean isLogin(String method,String path){return "POST".equals(method)&&"/api/auth/login".equals(path);}
+  private void increment(Bucket b,long now){synchronized(b){resetIfExpired(b,now);b.count++;}}
+  private boolean isBlocked(Bucket b,int limit,long now){synchronized(b){resetIfExpired(b,now);return b.count>=limit;}}
+  private boolean isBlockedAfterIncrement(Bucket b,int limit,long now){synchronized(b){resetIfExpired(b,now);return b.count>limit;}}
+  private void resetIfExpired(Bucket b,long now){if(now-b.windowStart>=WINDOW_MS){b.windowStart=now;b.count=0;}}
+  private void reject(HttpServletResponse response) throws IOException {response.setStatus(429);response.setContentType("application/json");response.setHeader("Retry-After","60");response.getWriter().write("{\"error\":\"Too many requests. Please wait a moment and try again.\"}");}
 
   private int limitFor(String method,String path){
     if("POST".equals(method)&&"/api/auth/login".equals(path))return 10;
