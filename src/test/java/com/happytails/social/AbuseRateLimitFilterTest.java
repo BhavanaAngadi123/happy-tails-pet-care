@@ -15,7 +15,7 @@ class AbuseRateLimitFilterTest {
   @Autowired MockMvc mvc;
 
   @Test
-  void repeatedLoginAttemptsAreThrottled() throws Exception {
+  void repeatedLoginFailuresAreThrottled() throws Exception {
     for(int i=0;i<10;i++){
       mvc.perform(post("/api/auth/login")
           .header("X-Forwarded-For","203.0.113.44")
@@ -29,6 +29,24 @@ class AbuseRateLimitFilterTest {
         .content("{\"email\":\"nobody@example.com\",\"password\":\"wrongpass\"}"))
       .andExpect(status().isTooManyRequests())
       .andExpect(header().string("Retry-After","60"));
+  }
+
+  @Test
+  void successfulLoginsDoNotConsumeFailureLimit() throws Exception {
+    String email="shared-network-login@example.com";
+    String password="SharedPassword123";
+    mvc.perform(post("/api/auth/signup")
+        .header("X-Forwarded-For","203.0.113.46")
+        .contentType("application/json")
+        .content("{\"email\":\""+email+"\",\"password\":\""+password+"\",\"displayName\":\"Parent\"}"))
+      .andExpect(status().isCreated());
+    for(int i=0;i<12;i++){
+      mvc.perform(post("/api/auth/login")
+          .header("X-Forwarded-For","203.0.113.46")
+          .contentType("application/json")
+          .content("{\"email\":\""+email+"\",\"password\":\""+password+"\"}"))
+        .andExpect(status().isOk());
+    }
   }
 
   @Test
