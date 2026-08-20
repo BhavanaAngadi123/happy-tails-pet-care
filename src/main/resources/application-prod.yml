@@ -52,7 +52,7 @@ server:
 happy-tails:
   password-reset:
     enabled: ${PASSWORD_RESET_ENABLED:false}
-    base-url: ${APP_BASE_URL:http://localhost:10000}
+    base-url: ${APP_BASE_URL:${RENDER_EXTERNAL_URL:http://localhost:10000}}
     from: ${MAIL_FROM:no-reply@happytails.local}
 management:
   endpoints:
