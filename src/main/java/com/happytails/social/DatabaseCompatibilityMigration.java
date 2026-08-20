@@ -20,7 +20,7 @@ import java.util.Locale;
  *
  * Hibernate still owns normal schema creation through ddl-auto=update. This
  * runner only repairs columns created by older Happy Tails builds where the
- * deployed database may have a narrower or incomplete pet_profiles schema.
+ * deployed database may have narrower or incomplete schemas.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -48,12 +48,15 @@ public class DatabaseCompatibilityMigration implements ApplicationRunner {
     add("message_permission","varchar(255) default 'EVERYONE'");
     add("play_date_permission","varchar(255) default 'EVERYONE'");
 
-    // Old PostgreSQL deployments created avatar_url as varchar(255), which is
-    // too small for the compressed profile-photo data URLs used by Happy Tails.
-    // H2/local schemas are generated from the current entity and do not need
-    // PostgreSQL-specific ALTER COLUMN syntax.
+    // Older PostgreSQL deployments used varchar(255) for image/data URL fields.
+    // Profile photos and activity/memory images use compressed data URLs, so
+    // those columns must be widened for existing databases as well as new ones.
     if(databaseProduct().contains("postgresql")){
       jdbc.execute("alter table pet_profiles alter column avatar_url type text");
+      if(tableExists("social_posts")&&columnExists("social_posts","media_url"))
+        jdbc.execute("alter table social_posts alter column media_url type text");
+      if(tableExists("pet_memories")&&columnExists("pet_memories","media_url"))
+        jdbc.execute("alter table pet_memories alter column media_url type text");
     }
 
     jdbc.update("update pet_profiles set private_account=false where private_account is null");
