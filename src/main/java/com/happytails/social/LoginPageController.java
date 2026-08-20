@@ -15,6 +15,7 @@ public class LoginPageController {
  public ResponseEntity<String> login() throws IOException {
   String html=new String(new ClassPathResource("static/login.html").getInputStream().readAllBytes(), StandardCharsets.UTF_8);
   if(!html.contains("/password-reset-ui.js"))html=html.replace("</body>","<script src=\"/password-reset-ui.js\"></script></body>");
+  if(!html.contains("/account-deletion-ui.js"))html=html.replace("</body>","<script src=\"/account-deletion-ui.js\"></script></body>");
   return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
  }
 }
