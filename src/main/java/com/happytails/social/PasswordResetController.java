@@ -38,6 +38,7 @@ public class PasswordResetController {
  private final OwnerAccountRepository owners;
  private final PasswordResetTokenRepository tokens;
  private final ObjectProvider<JavaMailSender> mailSender;
+ private final CredentialVersionService credentialVersions;
  private final BCryptPasswordEncoder encoder=new BCryptPasswordEncoder(10);
  private final SecureRandom random=new SecureRandom();
  @Value("${happy-tails.password-reset.enabled:false}") boolean enabled;
@@ -45,7 +46,7 @@ public class PasswordResetController {
  @Value("${happy-tails.password-reset.from:no-reply@happytails.local}") String from;
  @Value("${spring.mail.host:}") String mailHost;
 
- public PasswordResetController(OwnerAccountRepository owners,PasswordResetTokenRepository tokens,ObjectProvider<JavaMailSender> mailSender){this.owners=owners;this.tokens=tokens;this.mailSender=mailSender;}
+ public PasswordResetController(OwnerAccountRepository owners,PasswordResetTokenRepository tokens,ObjectProvider<JavaMailSender> mailSender,CredentialVersionService credentialVersions){this.owners=owners;this.tokens=tokens;this.mailSender=mailSender;this.credentialVersions=credentialVersions;}
 
  @GetMapping("/status") public Map<String,Object> status(){
   Map<String,Object> m=new LinkedHashMap<>();
@@ -76,6 +77,7 @@ public class PasswordResetController {
   if(owner==null)return ResponseEntity.badRequest().body(Map.of("error","This reset link is invalid or expired."));
   owner.setPasswordHash(encoder.encode(password));owners.save(owner);
   tokens.findByOwnerIdAndUsedFalse(owner.getId()).forEach(x->{x.used=true;tokens.save(x);});
+  credentialVersions.rotate(owner.getId());
   return ResponseEntity.ok(Map.of("ok",true,"message","Password updated. You can now log in."));
  }
 
