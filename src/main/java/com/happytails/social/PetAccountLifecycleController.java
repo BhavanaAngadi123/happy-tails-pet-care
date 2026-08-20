@@ -16,54 +16,32 @@ class PetAccountCleanupService {
   @Transactional
   public void deletePet(Long petId){
     delete("post_paws","pet_profile_id",petId);
-    delete("post_paws","petProfileId",petId);
     delete("post_comments","pet_profile_id",petId);
-    delete("post_comments","petProfileId",petId);
     delete("pet_community_posts","pet_profile_id",petId);
-    delete("pet_community_posts","petProfileId",petId);
     delete("pet_community_members","pet_profile_id",petId);
-    delete("pet_community_members","petProfileId",petId);
     deleteEither("pet_messages","from_pet_id","to_pet_id",petId);
-    deleteEither("pet_messages","fromPetId","toPetId",petId);
     deleteEither("pet_blocks","blocker_pet_id","blocked_pet_id",petId);
-    deleteEither("pet_blocks","blockerPetId","blockedPetId",petId);
     deleteEither("pet_reports","reporter_pet_id","reported_pet_id",petId);
-    deleteEither("pet_reports","reporterPetId","reportedPetId",petId);
     deleteEither("pet_follows","follower_pet_id","following_pet_id",petId);
-    deleteEither("pet_follows","followerPetId","followingPetId",petId);
     deleteEither("friend_requests","from_pet_id","to_pet_id",petId);
-    deleteEither("friend_requests","fromPetId","toPetId",petId);
     deleteEither("play_dates","host_pet_id","guest_pet_id",petId);
-    deleteEither("play_dates","hostPetId","guestPetId",petId);
     delete("meetup_attendees","pet_profile_id",petId);
-    delete("meetup_attendees","petProfileId",petId);
     delete("pet_reminders","pet_profile_id",petId);
-    delete("pet_reminders","petProfileId",petId);
     delete("pet_orders","pet_profile_id",petId);
-    delete("pet_orders","petProfileId",petId);
     delete("pet_memories","pet_profile_id",petId);
-    delete("pet_memories","petProfileId",petId);
     delete("pet_health_profiles","pet_profile_id",petId);
-    delete("pet_health_profiles","petProfileId",petId);
     delete("pet_health_records","pet_profile_id",petId);
-    delete("pet_health_records","petProfileId",petId);
     delete("pet_medications","pet_profile_id",petId);
-    delete("pet_medications","petProfileId",petId);
     delete("sitter_bookings","pet_profile_id",petId);
-    delete("sitter_bookings","petProfileId",petId);
     delete("social_posts","pet_profile_id",petId);
-    delete("social_posts","petProfileId",petId);
     delete("owner_pet_links","pet_profile_id",petId);
-    delete("owner_pet_links","petProfileId",petId);
-    try{em.createNativeQuery("delete from pet_profiles where id=:id").setParameter("id",petId).executeUpdate();}catch(Exception ignored){}
+    em.createNativeQuery("delete from pet_profiles where id=:id").setParameter("id",petId).executeUpdate();
     recalcSocialCounts();
   }
 
-  private void delete(String table,String column,Long id){try{em.createNativeQuery("delete from "+table+" where "+column+"=:id").setParameter("id",id).executeUpdate();em.flush();}catch(Exception ignored){}}
-  private void deleteEither(String table,String a,String b,Long id){try{em.createNativeQuery("delete from "+table+" where "+a+"=:id or "+b+"=:id").setParameter("id",id).executeUpdate();em.flush();}catch(Exception ignored){}}
-  private void recalcSocialCounts(){
-    try{em.createNativeQuery("update pet_profiles p set followers=(select count(*) from pet_follows f where f.following_pet_id=p.id), following=(select count(*) from pet_follows f where f.follower_pet_id=p.id)").executeUpdate();}catch(Exception first){try{em.createNativeQuery("update pet_profiles p set followers=(select count(*) from pet_follows f where f.followingPetId=p.id), following=(select count(*) from pet_follows f where f.followerPetId=p.id)").executeUpdate();}catch(Exception ignored){}}
-  }
+  private void delete(String table,String column,Long id){em.createNativeQuery("delete from "+table+" where "+column+"=:id").setParameter("id",id).executeUpdate();}
+  private void deleteEither(String table,String a,String b,Long id){em.createNativeQuery("delete from "+table+" where "+a+"=:id or "+b+"=:id").setParameter("id",id).executeUpdate();}
+  private void recalcSocialCounts(){em.createNativeQuery("update pet_profiles p set followers=(select count(*) from pet_follows f where f.following_pet_id=p.id), following=(select count(*) from pet_follows f where f.follower_pet_id=p.id)").executeUpdate();}
 }
 
 @RestController
