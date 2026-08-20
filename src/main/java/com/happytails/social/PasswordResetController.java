@@ -43,19 +43,20 @@ public class PasswordResetController {
  @Value("${happy-tails.password-reset.enabled:false}") boolean enabled;
  @Value("${happy-tails.password-reset.base-url:http://localhost:8080}") String baseUrl;
  @Value("${happy-tails.password-reset.from:no-reply@happytails.local}") String from;
+ @Value("${spring.mail.host:}") String mailHost;
 
  public PasswordResetController(OwnerAccountRepository owners,PasswordResetTokenRepository tokens,ObjectProvider<JavaMailSender> mailSender){this.owners=owners;this.tokens=tokens;this.mailSender=mailSender;}
 
- @GetMapping("/status") public Map<String,Object> status(){return Map.of("enabled",enabled&&mailSender.getIfAvailable()!=null);}
+ @GetMapping("/status") public Map<String,Object> status(){return Map.of("enabled",ready());}
 
  @PostMapping("/request") public ResponseEntity<?> request(@RequestBody Map<String,String> body){
   String email=body.getOrDefault("email","").trim().toLowerCase(Locale.ROOT);
-  if(enabled&&mailSender.getIfAvailable()!=null&&!email.isBlank())owners.findByEmailIgnoreCase(email).ifPresent(this::issueReset);
+  if(ready()&&!email.isBlank())owners.findByEmailIgnoreCase(email).ifPresent(this::issueReset);
   return ResponseEntity.ok(Map.of("ok",true,"message","If an account exists for that email, reset instructions will be sent."));
  }
 
  @PostMapping("/confirm") public ResponseEntity<?> confirm(@RequestBody Map<String,String> body){
-  if(!enabled||mailSender.getIfAvailable()==null)return ResponseEntity.status(503).body(Map.of("error","Password reset is not configured."));
+  if(!ready())return ResponseEntity.status(503).body(Map.of("error","Password reset is not configured."));
   String token=body.getOrDefault("token","").trim(),password=body.getOrDefault("newPassword","");
   String e=passwordError(password);if(e!=null)return ResponseEntity.badRequest().body(Map.of("error",e));
   if(token.isBlank())return ResponseEntity.badRequest().body(Map.of("error","Reset token is required."));
@@ -68,6 +69,7 @@ public class PasswordResetController {
   return ResponseEntity.ok(Map.of("ok",true,"message","Password updated. You can now log in."));
  }
 
+ private boolean ready(){return enabled&&mailHost!=null&&!mailHost.isBlank()&&mailSender.getIfAvailable()!=null;}
  private void issueReset(OwnerAccount owner){
   JavaMailSender sender=mailSender.getIfAvailable();if(sender==null)return;
   tokens.findByOwnerIdAndUsedFalse(owner.getId()).forEach(x->{x.used=true;tokens.save(x);});
