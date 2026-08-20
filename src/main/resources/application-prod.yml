@@ -29,6 +29,7 @@ spring:
     port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
+    test-connection: false
     properties:
       mail:
         smtp:
@@ -63,3 +64,6 @@ management:
     health:
       probes:
         enabled: true
+  health:
+    mail:
+      enabled: false
