@@ -24,6 +24,17 @@ spring:
       hibernate:
         jdbc:
           time_zone: UTC
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_STARTTLS:true}
   h2:
     console:
       enabled: false
@@ -38,6 +49,11 @@ server:
         http-only: true
         secure: true
         same-site: lax
+happy-tails:
+  password-reset:
+    enabled: ${PASSWORD_RESET_ENABLED:false}
+    base-url: ${APP_BASE_URL:http://localhost:10000}
+    from: ${MAIL_FROM:no-reply@happytails.local}
 management:
   endpoints:
     web:
