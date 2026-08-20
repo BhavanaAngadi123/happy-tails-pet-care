@@ -8,42 +8,16 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
-@Entity
-@Table(name="post_paws",uniqueConstraints=@UniqueConstraint(columnNames={"postId","petProfileId"}))
-class PostPaw extends BaseEntity{
-  Long postId; Long petProfileId; LocalDateTime createdAt=LocalDateTime.now();
-  public Long getPostId(){return postId;} public void setPostId(Long v){postId=v;}
-  public Long getPetProfileId(){return petProfileId;} public void setPetProfileId(Long v){petProfileId=v;}
-  public LocalDateTime getCreatedAt(){return createdAt;}
-}
+@Entity @Table(name="post_paws",uniqueConstraints=@UniqueConstraint(columnNames={"postId","petProfileId"}))
+class PostPaw extends BaseEntity{Long postId;Long petProfileId;LocalDateTime createdAt=LocalDateTime.now();public Long getPostId(){return postId;}public void setPostId(Long v){postId=v;}public Long getPetProfileId(){return petProfileId;}public void setPetProfileId(Long v){petProfileId=v;}public LocalDateTime getCreatedAt(){return createdAt;}}
+@Entity @Table(name="post_comments")
+class PostComment extends BaseEntity{Long postId;Long petProfileId;@Column(nullable=false,length=1000)String body;LocalDateTime createdAt=LocalDateTime.now();public Long getPostId(){return postId;}public void setPostId(Long v){postId=v;}public Long getPetProfileId(){return petProfileId;}public void setPetProfileId(Long v){petProfileId=v;}public String getBody(){return body;}public void setBody(String v){body=v;}public LocalDateTime getCreatedAt(){return createdAt;}}
+interface PostPawRepository extends JpaRepository<PostPaw,Long>{Optional<PostPaw> findByPostIdAndPetProfileId(Long postId,Long petId);long countByPostId(Long postId);List<PostPaw> findByPetProfileId(Long petId);List<PostPaw> findByPostId(Long postId);}
+interface PostCommentRepository extends JpaRepository<PostComment,Long>{List<PostComment> findByPostIdOrderByCreatedAtAsc(Long postId);long countByPostId(Long postId);List<PostComment> findByPostId(Long postId);}
 
-@Entity
-@Table(name="post_comments")
-class PostComment extends BaseEntity{
-  Long postId; Long petProfileId;
-  @Column(nullable=false,length=1000) String body;
-  LocalDateTime createdAt=LocalDateTime.now();
-  public Long getPostId(){return postId;} public void setPostId(Long v){postId=v;}
-  public Long getPetProfileId(){return petProfileId;} public void setPetProfileId(Long v){petProfileId=v;}
-  public String getBody(){return body;} public void setBody(String v){body=v;}
-  public LocalDateTime getCreatedAt(){return createdAt;}
-}
-
-interface PostPawRepository extends JpaRepository<PostPaw,Long>{
-  Optional<PostPaw> findByPostIdAndPetProfileId(Long postId,Long petId);
-  long countByPostId(Long postId);
-  List<PostPaw> findByPetProfileId(Long petId);
-}
-interface PostCommentRepository extends JpaRepository<PostComment,Long>{
-  List<PostComment> findByPostIdOrderByCreatedAtAsc(Long postId);
-  long countByPostId(Long postId);
-}
-
-@RestController
-@RequestMapping("/api/interactions")
+@RestController @RequestMapping("/api/interactions")
 class PostInteractionController{
-  private final SocialPostRepository posts; private final PostPawRepository paws; private final PostCommentRepository comments;
-  private final PetProfileRepository profiles; private final FriendRequestRepository friends; private final PetBlockRepository blocks; private final PetFollowRepository follows;
+  private final SocialPostRepository posts;private final PostPawRepository paws;private final PostCommentRepository comments;private final PetProfileRepository profiles;private final FriendRequestRepository friends;private final PetBlockRepository blocks;private final PetFollowRepository follows;
   PostInteractionController(SocialPostRepository posts,PostPawRepository paws,PostCommentRepository comments,PetProfileRepository profiles,FriendRequestRepository friends,PetBlockRepository blocks,PetFollowRepository follows){this.posts=posts;this.paws=paws;this.comments=comments;this.profiles=profiles;this.friends=friends;this.blocks=blocks;this.follows=follows;}
   private Long me(HttpSession s){Object x=s.getAttribute("activePetId");return x instanceof Long?(Long)x:null;}
   private boolean blocked(Long a,Long b){return a!=null&&b!=null&&(blocks.existsByBlockerPetIdAndBlockedPetId(a,b)||blocks.existsByBlockerPetIdAndBlockedPetId(b,a));}
@@ -52,14 +26,11 @@ class PostInteractionController{
   private ResponseEntity<Map<String,String>> login(){return ResponseEntity.status(401).body(Map.of("error","Please log in and select a pet."));}
 
   @GetMapping("/state") ResponseEntity<?> state(HttpSession s){Long pet=me(s);if(pet==null)return login();Set<Long> pawed=new HashSet<>();for(PostPaw p:paws.findByPetProfileId(pet))pawed.add(p.getPostId());return ResponseEntity.ok(Map.of("pawedPostIds",pawed));}
-
+  @PatchMapping("/posts/{id}") ResponseEntity<?> editPost(@PathVariable Long id,@RequestBody Map<String,String> req,HttpSession s){Long pet=me(s);if(pet==null)return login();return posts.findById(id).<ResponseEntity<?>>map(post->{if(!Objects.equals(pet,post.getPetProfileId()))return ResponseEntity.status(403).body(Map.of("error","You can edit only your pet's own posts."));String caption=req.getOrDefault("caption","").trim();if(caption.isEmpty())return ResponseEntity.badRequest().body(Map.of("error","Post caption cannot be empty."));if(caption.length()>2000)return ResponseEntity.badRequest().body(Map.of("error","Posts can be up to 2,000 characters."));post.setCaption(caption);return ResponseEntity.ok(posts.save(post));}).orElseGet(()->ResponseEntity.notFound().build());}
+  @DeleteMapping("/posts/{id}") ResponseEntity<?> deletePost(@PathVariable Long id,HttpSession s){Long pet=me(s);if(pet==null)return login();return posts.findById(id).<ResponseEntity<?>>map(post->{if(!Objects.equals(pet,post.getPetProfileId()))return ResponseEntity.status(403).body(Map.of("error","You can delete only your pet's own posts."));paws.deleteAll(paws.findByPostId(id));comments.deleteAll(comments.findByPostId(id));posts.delete(post);return ResponseEntity.ok(Map.of("deleted",true));}).orElseGet(()->ResponseEntity.notFound().build());}
   @PostMapping("/posts/{id}/paw") ResponseEntity<?> togglePaw(@PathVariable Long id,HttpSession s){Long pet=me(s);if(pet==null)return login();return posts.findById(id).<ResponseEntity<?>>map(post->{if(!canSee(pet,post))return ResponseEntity.status(403).body(Map.of("error","This post is unavailable."));Optional<PostPaw> existing=paws.findByPostIdAndPetProfileId(id,pet);boolean pawed;if(existing.isPresent()){paws.delete(existing.get());pawed=false;}else{PostPaw p=new PostPaw();p.setPostId(id);p.setPetProfileId(pet);paws.save(p);pawed=true;}int count=(int)paws.countByPostId(id);post.setPawCount(count);posts.save(post);return ResponseEntity.ok(Map.of("pawed",pawed,"pawCount",count));}).orElseGet(()->ResponseEntity.notFound().build());}
-
   @GetMapping("/posts/{id}/comments") ResponseEntity<?> comments(@PathVariable Long id,HttpSession s){Long pet=me(s);if(pet==null)return login();return posts.findById(id).<ResponseEntity<?>>map(post->{if(!canSee(pet,post))return ResponseEntity.status(403).body(Map.of("error","This post is unavailable."));List<Map<String,Object>> out=new ArrayList<>();for(PostComment c:comments.findByPostIdOrderByCreatedAtAsc(id)){if(blocked(pet,c.getPetProfileId()))continue;PetProfile author=profiles.findById(c.getPetProfileId()).orElse(null);Map<String,Object> m=new LinkedHashMap<>();m.put("id",c.getId());m.put("petProfileId",c.getPetProfileId());m.put("body",c.getBody());m.put("createdAt",c.getCreatedAt());m.put("authorName",author==null?"Pet":author.getName());m.put("authorHandle",author==null?"":author.getHandle());m.put("authorAvatar",author==null?null:author.getAvatarUrl());m.put("canDelete",Objects.equals(pet,c.getPetProfileId())||Objects.equals(pet,post.getPetProfileId()));out.add(m);}return ResponseEntity.ok(out);}).orElseGet(()->ResponseEntity.notFound().build());}
-
   @PostMapping("/posts/{id}/comments") ResponseEntity<?> addComment(@PathVariable Long id,@RequestBody Map<String,String> req,HttpSession s){Long pet=me(s);if(pet==null)return login();return posts.findById(id).<ResponseEntity<?>>map(post->{if(!canSee(pet,post))return ResponseEntity.status(403).body(Map.of("error","This post is unavailable."));String body=req.getOrDefault("body","").trim();if(body.isEmpty())return ResponseEntity.badRequest().body(Map.of("error","Comment cannot be empty."));if(body.length()>1000)return ResponseEntity.badRequest().body(Map.of("error","Comments can be up to 1,000 characters."));PostComment c=new PostComment();c.setPostId(id);c.setPetProfileId(pet);c.setBody(body);PostComment saved=comments.save(c);post.setCommentCount((int)comments.countByPostId(id));posts.save(post);return ResponseEntity.status(201).body(saved);}).orElseGet(()->ResponseEntity.notFound().build());}
-
   @DeleteMapping("/comments/{id}") ResponseEntity<?> deleteComment(@PathVariable Long id,HttpSession s){Long pet=me(s);if(pet==null)return login();return comments.findById(id).<ResponseEntity<?>>map(c->{SocialPost post=posts.findById(c.getPostId()).orElse(null);if(post==null)return ResponseEntity.notFound().build();if(!Objects.equals(pet,c.getPetProfileId())&&!Objects.equals(pet,post.getPetProfileId()))return ResponseEntity.status(403).body(Map.of("error","You cannot delete this comment."));comments.delete(c);post.setCommentCount((int)comments.countByPostId(post.getId()));posts.save(post);return ResponseEntity.ok(Map.of("deleted",true,"commentCount",post.getCommentCount()));}).orElseGet(()->ResponseEntity.notFound().build());}
-
   @DeleteMapping("/follows/{targetId}") ResponseEntity<?> unfollow(@PathVariable Long targetId,HttpSession s){Long pet=me(s);if(pet==null)return login();Optional<PetFollow> f=follows.findByFollowerPetIdAndFollowingPetId(pet,targetId);if(f.isEmpty())return ResponseEntity.ok(Map.of("following",false));follows.delete(f.get());profiles.findById(pet).ifPresent(p->{p.setFollowing(Math.max(0,p.getFollowing()-1));profiles.save(p);});profiles.findById(targetId).ifPresent(p->{p.setFollowers(Math.max(0,p.getFollowers()-1));profiles.save(p);});return ResponseEntity.ok(Map.of("following",false));}
 }
