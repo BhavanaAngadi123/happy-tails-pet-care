@@ -10,6 +10,7 @@ interface FriendRequestRepository extends JpaRepository<FriendRequest,Long>{ Lis
 interface PetReminderRepository extends JpaRepository<PetReminder,Long>{ List<PetReminder> findByPetProfileIdOrderByDueDateAsc(Long id); }
 interface PlayDateRepository extends JpaRepository<PlayDate,Long>{ List<PlayDate> findByHostPetIdOrGuestPetIdOrderByScheduledAtAsc(Long a,Long b); }
 interface MeetupRepository extends JpaRepository<Meetup,Long>{ List<Meetup> findAllByOrderByScheduledAtAsc(); }
+interface MeetupAttendeeRepository extends JpaRepository<MeetupAttendee,Long>{ boolean existsByMeetupIdAndPetProfileId(Long meetupId,Long petProfileId); long countByMeetupId(Long meetupId); Optional<MeetupAttendee> findByMeetupIdAndPetProfileId(Long meetupId,Long petProfileId); List<MeetupAttendee> findByPetProfileId(Long petProfileId); }
 interface PetSitterRepository extends JpaRepository<PetSitter,Long>{ List<PetSitter> findByAvailableTrue(); }
 interface PetOrderRepository extends JpaRepository<PetOrder,Long>{ List<PetOrder> findByPetProfileIdOrderByCreatedAtDesc(Long id); }
 interface PetMemoryRepository extends JpaRepository<PetMemory,Long>{ List<PetMemory> findByPetProfileIdOrderByMemoryDateDesc(Long id); }
