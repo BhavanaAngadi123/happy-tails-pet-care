@@ -47,7 +47,17 @@ public class PasswordResetController {
 
  public PasswordResetController(OwnerAccountRepository owners,PasswordResetTokenRepository tokens,ObjectProvider<JavaMailSender> mailSender){this.owners=owners;this.tokens=tokens;this.mailSender=mailSender;}
 
- @GetMapping("/status") public Map<String,Object> status(){return Map.of("enabled",ready());}
+ @GetMapping("/status") public Map<String,Object> status(){
+  Map<String,Object> m=new LinkedHashMap<>();
+  m.put("enabled",ready());
+  m.put("featureEnabled",enabled);
+  m.put("mailHostConfigured",notBlank(mailHost));
+  m.put("mailSenderAvailable",mailSender.getIfAvailable()!=null);
+  m.put("baseUrlConfigured",notBlank(baseUrl)&&!baseUrl.contains("localhost"));
+  m.put("fromAddressConfigured",notBlank(from)&&!from.endsWith("@happytails.local"));
+  m.put("tokenLifetimeMinutes",30);
+  return m;
+ }
 
  @PostMapping("/request") public ResponseEntity<?> request(@RequestBody Map<String,String> body){
   String email=body.getOrDefault("email","").trim().toLowerCase(Locale.ROOT);
@@ -69,7 +79,8 @@ public class PasswordResetController {
   return ResponseEntity.ok(Map.of("ok",true,"message","Password updated. You can now log in."));
  }
 
- private boolean ready(){return enabled&&mailHost!=null&&!mailHost.isBlank()&&mailSender.getIfAvailable()!=null;}
+ private boolean ready(){return enabled&&notBlank(mailHost)&&mailSender.getIfAvailable()!=null;}
+ private boolean notBlank(String s){return s!=null&&!s.isBlank();}
  private void issueReset(OwnerAccount owner){
   JavaMailSender sender=mailSender.getIfAvailable();if(sender==null)return;
   tokens.findByOwnerIdAndUsedFalse(owner.getId()).forEach(x->{x.used=true;tokens.save(x);});
