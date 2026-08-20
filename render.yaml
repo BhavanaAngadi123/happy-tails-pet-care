@@ -30,6 +30,22 @@ services:
         fromDatabase:
           name: happy-tails-db
           property: password
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_SMTP_AUTH
+        value: "true"
+      - key: MAIL_STARTTLS
+        value: "true"
+      - key: PASSWORD_RESET_ENABLED
+        value: "false"
 
 databases:
   - name: happy-tails-db
