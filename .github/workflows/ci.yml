@@ -9,6 +9,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: happytails_ci
+          POSTGRES_USER: happytails
+          POSTGRES_PASSWORD: happytails
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U happytails -d happytails_ci"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -16,7 +30,16 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
-      - name: Verify Spring Boot application
+      - name: Verify Spring Boot application on H2
         run: mvn -B clean verify
+      - name: Verify production profile on PostgreSQL
+        env:
+          SPRING_PROFILES_ACTIVE: prod
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: happytails_ci
+          DB_USER: happytails
+          DB_PASSWORD: happytails
+        run: mvn -B test
       - name: Verify production Docker image builds
         run: docker build -t happy-tails-ci .
